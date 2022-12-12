@@ -155,7 +155,8 @@ END_OF_REGEX;
 
         $decoded = $orig_href;
         try {
-            if (strlen($host = $this->_parseurl($orig_href, PHP_URL_HOST))) {
+            $host = $this->_parseurl($orig_href, PHP_URL_HOST);
+            if ($host !== null && strlen($host)) {
                 $decoded = substr_replace(
                     $orig_href,
                     Horde_Idna::decode($host),
@@ -221,12 +222,13 @@ END_OF_REGEX;
      * See https://bugs.php.net/bug.php?id=52923 for description of
      * parse_url issues.
      *
-     * @param  string $url  The url to parse.
+     * @param  string $url        The url to parse.
+     * @param  int    $component
      *
      * @return mixed        The parsed url.
      * @throws InvalidArgumentException
      */
-    protected function _parseurl($url)
+    protected function _parseurl(string $url, int $component)
     {
        $enc_url = preg_replace_callback(
             '%[^:/@?&=#]+%usD',
@@ -236,13 +238,12 @@ END_OF_REGEX;
             },
             $url
         );
-        $parts = @parse_url($enc_url);
+        $parts = @parse_url($enc_url, $component);
         if ($parts === false) {
             throw new InvalidArgumentException('Malformed URL: ' . $url);
         }
-        foreach($parts as $name => $value) {
-            $parts[$name] = urldecode($value);
-        }
+
+        return $parts !== null ? urldecode($parts) : null;
     }
 
 }
